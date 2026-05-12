@@ -1,0 +1,207 @@
+# DATABASE SCHEMA - SECURE VOTING SYSTEM
+# File: data.txt - Complete database structure and sample data
+
+## DATABASE STRUCTURE
+
+### Primary Database: database/db.sqlite3
+# Location: e:/Blockchain - voting/p-4/secure-voting-system/database/db.sqlite3
+# Size: 112 KB
+# Type: SQLite 3
+
+## TABLE SCHEMAS
+
+-- Voters Table: Stores voter registration and authentication data
+CREATE TABLE voters (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    virtual_voter_id VARCHAR(20) UNIQUE NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(120) UNIQUE NOT NULL,
+    phone VARCHAR(20) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    face_embedding TEXT,                    -- JSON array of face embedding vectors
+    is_approved BOOLEAN DEFAULT FALSE,       -- Admin approval status
+    is_active BOOLEAN DEFAULT TRUE,          -- Account active/inactive
+    has_voted BOOLEAN DEFAULT FALSE,         -- Voting status
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Candidates Table: Stores election candidate information
+CREATE TABLE candidates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name VARCHAR(100) NOT NULL,
+    party_name VARCHAR(100) NOT NULL,
+    party_symbol VARCHAR(100),                -- File path or emoji/symbol
+    description TEXT,
+    photo_url VARCHAR(255),
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Elections Table: Stores election details and timing
+CREATE TABLE elections (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title VARCHAR(200) NOT NULL,
+    description TEXT,
+    start_time TIMESTAMP NOT NULL,
+    end_time TIMESTAMP NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Votes Table: Stores cast votes with blockchain references
+CREATE TABLE votes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    voter_id INTEGER NOT NULL,
+    candidate_id INTEGER NOT NULL,
+    election_id INTEGER NOT NULL,
+    block_hash VARCHAR(255) NOT NULL,      -- Reference to blockchain block
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(voter_id) REFERENCES voters(id),
+    FOREIGN KEY(candidate_id) REFERENCES candidates(id),
+    FOREIGN KEY(election_id) REFERENCES elections(id)
+);
+
+-- Blockchain Blocks Table: Immutable blockchain storage
+CREATE TABLE blockchain_blocks (
+    index INTEGER PRIMARY KEY,                -- Block number (0 = genesis)
+    timestamp TIMESTAMP NOT NULL,
+    voter_hash VARCHAR(255) NOT NULL,       -- Hash of voter ID (anonymized)
+    vote_hash VARCHAR(255) NOT NULL,        -- Hash of vote data
+    previous_hash VARCHAR(255) NOT NULL,    -- Previous block hash
+    current_hash VARCHAR(255) NOT NULL,     -- Current block hash (SHA256)
+    nonce INTEGER NOT NULL,                 -- Proof of work nonce
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- OTP Verifications Table: One-time password management
+CREATE TABLE otp_verifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    voter_id INTEGER NOT NULL,
+    otp_code VARCHAR(6) NOT NULL,
+    is_used BOOLEAN DEFAULT FALSE,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(voter_id) REFERENCES voters(id)
+);
+
+-- Admins Table: System administrator accounts
+CREATE TABLE admins (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username VARCHAR(80) UNIQUE NOT NULL,
+    email VARCHAR(120) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+## CURRENT DATA STATUS
+
+-- Active Voters (4 total)
+SELECT * FROM voters WHERE is_active = TRUE;
+-- VV-2025-85113 (Shiva) - Approved, Not Voted, Has Face Embedding
+-- VV-2025-28492 (Swati) - Approved, Has Voted, Has Face Embedding  
+-- VV-2025-18572 (Ramesh) - Approved, Not Voted, Has Face Embedding
+-- VV-2025-85114 (Test) - Not Approved, Not Voted, No Face Embedding
+
+-- Active Candidates (4 total)
+SELECT * FROM candidates WHERE is_active = TRUE;
+-- ID 1: Shashi Kumar - Congress Party (Symbol: 🌟)
+-- ID 2: Varsha - BJP Party (Symbol: 😎)
+-- ID 3: Ramesh - AAP Party (Symbol: ℹ️)
+-- ID 4: Swati - Independent (Symbol: 🎯)
+
+-- Active Elections (1 current)
+SELECT * FROM elections WHERE is_active = TRUE;
+-- ID 7: General Election 2025 (Active, Currently Running)
+
+-- Cast Votes (7 total)
+SELECT * FROM votes;
+-- 7 votes cast, each linked to blockchain blocks
+
+-- Blockchain Status (2 blocks)
+SELECT * FROM blockchain_blocks ORDER BY index;
+-- Block 0: Genesis block (voter_hash: "genesis", vote_hash: "genesis")
+-- Block 1: Vote block (voter_hash: "VV-2025-85113", vote_hash: "1-7")
+
+## SAMPLE QUERIES FOR MANUAL EDITING
+
+-- View all voters with their status
+SELECT v.virtual_voter_id, v.name, v.email, v.is_approved, v.has_voted, 
+       CASE WHEN v.face_embedding IS NOT NULL THEN 'YES' ELSE 'NO' END as has_face_data
+FROM voters v 
+ORDER BY v.created_at;
+
+-- View voting statistics
+SELECT c.name as candidate_name, c.party_name, COUNT(v.id) as vote_count
+FROM candidates c
+LEFT JOIN votes v ON c.id = v.candidate_id
+GROUP BY c.id, c.name, c.party_name
+ORDER BY vote_count DESC;
+
+-- View blockchain integrity
+SELECT b.index, b.timestamp, b.voter_hash, b.vote_hash, 
+       substr(b.current_hash, 1, 16) || '...' as hash_preview,
+       b.nonce
+FROM blockchain_blocks b
+ORDER BY b.index;
+
+-- Check OTP status
+SELECT v.virtual_voter_id, v.name, o.otp_code, o.is_used, o.expires_at
+FROM otp_verifications o
+JOIN voters v ON o.voter_id = v.id
+WHERE o.is_used = FALSE AND o.expires_at > datetime('now')
+ORDER BY o.created_at DESC;
+
+## MANUAL EDITING INSTRUCTIONS
+
+-- To reset a voter's voting status (for testing):
+UPDATE voters SET has_voted = FALSE WHERE virtual_voter_id = 'VV-2025-85113';
+
+-- To approve a voter:
+UPDATE voters SET is_approved = TRUE WHERE virtual_voter_id = 'VV-2025-85114';
+
+-- To add a new candidate:
+INSERT INTO candidates (name, party_name, party_symbol, description) 
+VALUES ('New Candidate', 'New Party', '🎉', 'Description here');
+
+-- To view blockchain block details:
+SELECT * FROM blockchain_blocks WHERE index = 1;
+
+-- To check vote integrity:
+SELECT v.id, v.created_at, v.block_hash, 
+       vr.virtual_voter_id, c.name as candidate_name, e.title as election_title
+FROM votes v
+JOIN voters vr ON v.voter_id = vr.id
+JOIN candidates c ON v.candidate_id = c.id  
+JOIN elections e ON v.election_id = e.id
+ORDER BY v.created_at DESC;
+
+-- SECURITY: Always backup before manual edits
+-- Backup command: cp db.sqlite3 db.sqlite3.backup.$(date +%Y%m%d_%H%M%S)
+
+## BLOCKCHAIN VERIFICATION
+
+-- Verify blockchain integrity (check hash chaining):
+SELECT b1.index as block_num,
+       b1.current_hash,
+       b2.current_hash as previous_hash_in_next_block,
+       CASE WHEN b1.current_hash = b2.previous_hash THEN 'VALID' ELSE 'INVALID' END as integrity
+FROM blockchain_blocks b1
+JOIN blockchain_blocks b2 ON b1.index = b2.index - 1
+ORDER BY b1.index;
+
+-- Check proof of work (difficulty 4 = 4 leading zeros):
+SELECT index, current_hash, 
+       CASE WHEN substr(current_hash, 1, 4) = '0000' THEN 'VALID' ELSE 'INVALID' END as proof_of_work
+FROM blockchain_blocks;
+
+## FACE EMBEDDING DATA FORMAT
+
+-- Face embeddings are stored as JSON arrays:
+-- Example: [0.123, -0.456, 0.789, ...] (512 dimensions for DeepFace, 265 for OpenCV)
+-- Query to check face embedding presence:
+SELECT virtual_voter_id, name, 
+       CASE WHEN face_embedding IS NOT NULL THEN 
+            'Present (' || (length(face_embedding) - length(replace(face_embedding, ',', '')) + 1) || ' dimensions)'
+       ELSE 'Missing' END as embedding_status
+FROM voters WHERE is_active = TRUE;

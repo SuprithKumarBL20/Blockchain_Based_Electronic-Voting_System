@@ -1,0 +1,396 @@
+SECURE BLOCKCHAIN-BASED VOTING SYSTEM
+TECHNICAL DOCUMENTATION
+=====================================
+
+PROJECT STRUCTURE AND FILE RESPONSIBILITIES
+==========================================
+
+ROOT DIRECTORY FILES:
+---------------------
+app.py                    - Main Flask application entry point
+                          - Initializes Flask app, extensions, database
+                          - Registers blueprints for modular routing
+                          - Sets up default admin user
+                          - Network configuration (host='0.0.0.0', port=5000)
+
+config.py                 - Configuration class for all application settings
+                          - Database URI, JWT settings, face recognition config
+                          - Blockchain difficulty setting (4)
+                          - OTP configuration (6 digits, 5 min expiry)
+                          - Security settings (BCRYPT rounds: 12)
+
+requirements.txt          - Python dependencies list
+                          - All required packages for the system
+
+DATABASE STRUCTURE:
+-------------------
+database/
+├── models.py            - SQLAlchemy ORM models
+                         - Voter, Candidate, Election, Vote, Admin, OTPVerification, BlockchainBlock
+                         - Defines database schema and relationships
+                         - Implements user authentication methods
+
+├── db.sqlite3           - SQLite database file (created automatically)
+                         - Stores all application data
+                         - Voter information, elections, votes, blockchain data
+
+BLOCKCHAIN IMPLEMENTATION:
+--------------------------
+blockchain/
+├── blockchain.py        - Core blockchain implementation
+                         - Block class: Individual block structure
+                         - Blockchain class: Chain management
+                         - Proof-of-Work mining algorithm
+                         - Block validation and chain verification
+                         - Vote hashing and voter anonymization
+
+ROUTES AND BLUEPRINTS:
+-----------------------
+routes/
+├── auth.py              - Authentication routes blueprint
+                         - Login/logout functionality
+                         - Registration with face upload
+                         - Face recognition verification
+                         - OTP sending and verification
+
+├── voter.py             - Voter-specific routes
+                         - Dashboard access
+                         - Election listing
+                         - Voting interface
+                         - Vote history
+
+├── admin.py             - Admin management routes
+                         - Voter approval/rejection
+                         - Candidate management
+                         - Election creation/editing
+                         - Results viewing
+                         - Blockchain monitoring
+
+├── election.py          - Election-related routes
+                         - Election creation
+                         - Candidate assignment
+                         - Voting process
+                         - Results calculation
+
+AI/FACE RECOGNITION:
+--------------------
+ai/
+├── face_encoder.py      - Face recognition system
+                         - ONNX model loading and inference
+                         - Face encoding generation
+                         - Similarity comparison
+                         - Model path: 'ai/model.onnx'
+                         - Threshold: 0.6 (60% similarity)
+
+├── model.onnx           - Pre-trained face recognition model
+                         - ONNX format for cross-platform compatibility
+                         - Used for facial feature extraction
+
+STATIC ASSETS:
+-------------
+static/
+├── css/
+│   ├── style.css        - Base stylesheet
+│   ├── modern-theme.css - Modern glassmorphism design system
+│   └── responsive.css   - Mobile responsiveness
+
+├── js/
+│   ├── face-auth.js     - Face capture and upload
+│   ├── otp-verify.js    - OTP verification
+│   └── vote-cast.js     - Voting process
+
+├── images/
+│   └── (uploaded candidate photos)
+
+TEMPLATES:
+----------
+templates/
+├── base.html            - Base template with navigation
+├── base_modern.html     - Modern design base template
+├── index.html           - Landing page
+├── login.html           - Login form
+├── register.html        - Registration form
+├── vote.html            - Voting interface
+├── voter_dashboard.html - Voter dashboard
+├── admin/
+│   ├── dashboard.html   - Admin overview
+│   ├── candidates.html  - Candidate management
+│   ├── elections.html   - Election management
+│   ├── voters.html      - Voter approval
+│   ├── blockchain.html  - Blockchain viewer
+│   └── results.html     - Election results
+└── modern/              - Modern design versions
+
+BLOCKCHAIN WORKFLOW:
+===================
+
+1. VOTE CREATION:
+   - Voter selects candidate
+   - System creates vote_hash = SHA256(voter_id:candidate_id:timestamp)
+   - Voter hash created = SHA256(voter_email:voter_phone)
+   - Vote recorded in database with pending status
+
+2. BLOCK CREATION:
+   - New Block object created with:
+     * index: next block number
+     * timestamp: current datetime
+     * voter_hash: anonymized voter identifier
+     * vote_hash: encrypted vote data
+     * previous_hash: hash of previous block
+
+3. MINING PROCESS:
+   - Block mining starts with nonce = 0
+   - Target difficulty: 4 leading zeros (configurable)
+   - Hash recalculated with incremented nonce
+   - Mining continues until hash meets difficulty requirement
+   - Average mining time: ~1-2 seconds per vote
+
+4. BLOCKCHAIN STORAGE:
+   - Mined block added to blockchain chain
+   - Block data saved to BlockchainBlock table
+   - Vote status updated to 'confirmed'
+   - blockchain_hash field updated with block hash
+
+5. VERIFICATION:
+   - Any block can be verified by recalculating hash
+   - Chain integrity verified by checking previous_hash links
+   - Vote authenticity verified through vote_hash
+
+VOTE ENCRYPTION PROCESS:
+=======================
+
+1. VOTER IDENTIFICATION HASH:
+   Input: voter_email + voter_phone
+   Process: SHA256(email:phone)
+   Output: 64-character hexadecimal hash
+   Purpose: Anonymous voter identification
+
+2. VOTE DATA HASH:
+   Input: voter_id + candidate_id + timestamp
+   Process: SHA256(voter_id:candidate_id:timestamp)
+   Output: 64-character hexadecimal hash
+   Purpose: Tamper-proof vote recording
+
+3. BLOCK HASH:
+   Input: Block data (index, timestamp, voter_hash, vote_hash, previous_hash, nonce)
+   Process: SHA256(JSON.stringify(block_data))
+   Output: 64-character hexadecimal hash
+   Purpose: Block integrity and mining
+
+SECURITY MEASURES:
+=================
+
+1. MULTI-FACTOR AUTHENTICATION:
+   - Password authentication (bcrypt hashing)
+   - Face recognition (ONNX model, 60% threshold)
+   - OTP verification (6-digit, 5-minute expiry)
+
+2. DATA PROTECTION:
+   - Passwords: Bcrypt with 12 rounds of salting
+   - Votes: SHA256 hashing with voter anonymization
+   - Personal data: Face encodings stored securely
+
+3. NETWORK SECURITY:
+   - Rate limiting: 200 requests/day, 50/hour per IP
+   - JWT tokens for API authentication
+   - CORS protection enabled
+   - Input validation on all endpoints
+
+4. BLOCKCHAIN SECURITY:
+   - Proof-of-Work prevents spam
+   - Immutable ledger prevents vote tampering
+   - Cryptographic hashing ensures integrity
+   - Previous hash linking prevents chain modification
+
+CANDIDATE ADDITION PROCESS:
+==========================
+
+1. ADMIN ACCESS:
+   - Admin logs in with credentials
+   - Navigates to candidate management page
+   - Selects election for candidate
+
+2. CANDIDATE DATA ENTRY:
+   - Name input (required)
+   - Party affiliation (optional)
+   - Photo upload (JPG/PNG, max 16MB)
+   - Description/bio (optional)
+
+3. DATA VALIDATION:
+   - Name validation (letters and spaces only)
+   - Photo format validation
+   - File size check
+   - Duplicate name check within election
+
+4. DATABASE STORAGE:
+   - Candidate record created in database
+   - Photo saved to static/images/
+   - Associated with selected election
+   - Timestamp and admin ID recorded
+
+5. DISPLAY INTEGRATION:
+   - Candidate appears in election listing
+   - Photo displayed in voting interface
+   - Vote counting includes new candidate
+   - Results updated automatically
+
+DATABASE WORKFLOW:
+==================
+
+1. CONNECTION SETUP:
+   - SQLAlchemy ORM initialized with Flask
+   - SQLite database file created automatically
+   - Connection pooling configured
+   - Session management implemented
+
+2. TABLE CREATION:
+   - Voter table: User accounts and authentication
+   - Election table: Election metadata
+   - Candidate table: Candidate information
+   - Vote table: Individual vote records
+   - Admin table: Administrator accounts
+   - OTPVerification table: OTP codes
+   - BlockchainBlock table: Blockchain data
+
+3. DATA OPERATIONS:
+   - CRUD operations through ORM
+   - Transaction support for consistency
+   - Relationship management between tables
+   - Indexing for performance optimization
+
+4. BACKUP AND RECOVERY:
+   - Database file can be backed up manually
+   - Export functionality for data migration
+   - Transaction logs for audit trails
+   - Point-in-time recovery capability
+
+FACE RECOGNITION PROCESS:
+========================
+
+1. MODEL LOADING:
+   - ONNX model loaded at application startup
+   - Model path: ai/model.onnx
+   - Cross-platform compatibility ensured
+   - Memory optimization implemented
+
+2. FACE CAPTURE:
+   - Webcam access through browser API
+   - Canvas element for photo capture
+   - Image preprocessing (resize, normalize)
+   - Quality validation (face detection)
+
+3. ENCODING GENERATION:
+   - Face landmarks extracted
+   - 128-dimensional encoding created
+   - Normalization applied
+   - Encoding stored as base64 string
+
+4. SIMILARITY COMPARISON:
+   - Cosine similarity calculation
+   - Threshold: 0.6 (60% similarity required)
+   - Multiple attempts allowed
+   - Fallback to OTP if face fails
+
+VOTING PROCESS SECURITY:
+=======================
+
+1. PRE-VOTING CHECKS:
+   - Voter authentication verified
+   - Election status validated (active/inactive)
+   - Voting period checked (start/end times)
+   - Duplicate vote prevention
+
+2. VOTE CASTING:
+   - Candidate selection validated
+   - Vote hash generated and stored
+   - Blockchain block created
+   - Mining process executed
+
+3. POST-VOTING CONFIRMATION:
+   - Vote confirmed in blockchain
+   - Voter marked as voted
+   - Confirmation displayed to user
+   - Audit trail created
+
+ERROR HANDLING:
+==============
+
+1. DATABASE ERRORS:
+   - Connection failures handled gracefully
+   - Transaction rollback on errors
+   - Duplicate entry detection
+   - Constraint violation handling
+
+2. BLOCKCHAIN ERRORS:
+   - Mining failure recovery
+   - Chain corruption detection
+   - Invalid block rejection
+   - Consensus mechanism fallback
+
+3. AUTHENTICATION ERRORS:
+   - Invalid credentials handling
+   - Face recognition failures
+   - OTP expiration handling
+   - Session timeout management
+
+4. FILE SYSTEM ERRORS:
+   - Image upload failures
+   - Storage permission issues
+   - File corruption detection
+   - Backup creation errors
+
+PERFORMANCE OPTIMIZATION:
+========================
+
+1. DATABASE OPTIMIZATION:
+   - Indexing on frequently queried columns
+   - Query optimization with joins
+   - Connection pooling implementation
+   - Lazy loading for relationships
+
+2. BLOCKCHAIN OPTIMIZATION:
+   - Configurable difficulty levels
+   - Efficient mining algorithms
+   - Block size limitations
+   - Chain pruning strategies
+
+3. FRONTEND OPTIMIZATION:
+   - CSS/JS minification
+   - Image compression
+   - Caching strategies
+   - Lazy loading for content
+
+4. SERVER OPTIMIZATION:
+   - Gunicorn for production deployment
+   - Static file serving optimization
+   - Memory usage monitoring
+   - CPU utilization optimization
+
+MONITORING AND LOGGING:
+======================
+
+1. APPLICATION LOGGING:
+   - Request/response logging
+   - Error tracking and reporting
+   - Performance metrics
+   - Security event logging
+
+2. DATABASE MONITORING:
+   - Query performance tracking
+   - Connection pool monitoring
+   - Storage usage analysis
+   - Backup status verification
+
+3. BLOCKCHAIN MONITORING:
+   - Block creation tracking
+   - Mining difficulty adjustment
+   - Chain integrity verification
+   - Vote validation monitoring
+
+4. SECURITY MONITORING:
+   - Failed login attempts
+   - Rate limiting violations
+   - Suspicious activity detection
+   - Authentication success/failure rates
+
+This technical documentation provides comprehensive details about the Secure Blockchain-Based Voting System implementation, covering all major components and processes.

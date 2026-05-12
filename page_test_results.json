@@ -1,0 +1,196 @@
+{
+  "voter_pages": {
+    "/": {
+      "url": "http://localhost:5000/",
+      "status_code": 200,
+      "expected_status": 200,
+      "success": true,
+      "response_length": 30444,
+      "error": null
+    },
+    "/login": {
+      "url": "http://localhost:5000/login",
+      "status_code": 200,
+      "expected_status": 200,
+      "success": true,
+      "response_length": 44695,
+      "error": null
+    },
+    "/register": {
+      "url": "http://localhost:5000/register",
+      "status_code": 200,
+      "expected_status": 200,
+      "success": true,
+      "response_length": 32832,
+      "error": null
+    },
+    "/voter/dashboard": {
+      "url": "http://localhost:5000/voter/dashboard",
+      "status_code": 200,
+      "expected_status": 200,
+      "success": true,
+      "response_length": 46122,
+      "error": null
+    },
+    "/voter/vote": {
+      "url": "http://localhost:5000/voter/vote",
+      "status_code": 200,
+      "expected_status": 200,
+      "success": true,
+      "response_length": 46122,
+      "error": null
+    },
+    "/voter/voting-history": {
+      "url": "http://localhost:5000/voter/voting-history",
+      "status_code": 200,
+      "expected_status": 200,
+      "success": true,
+      "response_length": 46122,
+      "error": null
+    },
+    "/voter/profile": {
+      "url": "http://localhost:5000/voter/profile",
+      "status_code": 200,
+      "expected_status": 200,
+      "success": true,
+      "response_length": 46122,
+      "error": null
+    },
+    "/voter/profile/edit": {
+      "url": "http://localhost:5000/voter/profile/edit",
+      "status_code": 200,
+      "expected_status": 200,
+      "success": true,
+      "response_length": 46122,
+      "error": null
+    }
+  },
+  "admin_pages": {
+    "/admin/dashboard": {
+      "url": "http://localhost:5000/admin/dashboard",
+      "status_code": 200,
+      "expected_status": 200,
+      "success": true,
+      "response_length": 31388,
+      "error": null
+    },
+    "/admin/voters": {
+      "url": "http://localhost:5000/admin/voters",
+      "status_code": 200,
+      "expected_status": 200,
+      "success": true,
+      "response_length": 49025,
+      "error": null
+    },
+    "/admin/candidates": {
+      "url": "http://localhost:5000/admin/candidates",
+      "status_code": 200,
+      "expected_status": 200,
+      "success": true,
+      "response_length": 82785,
+      "error": null
+    },
+    "/admin/elections": {
+      "url": "http://localhost:5000/admin/elections",
+      "status_code": 200,
+      "expected_status": 200,
+      "success": true,
+      "response_length": 69331,
+      "error": null
+    },
+    "/admin/blockchain": {
+      "url": "http://localhost:5000/admin/blockchain",
+      "status_code": 200,
+      "expected_status": 200,
+      "success": true,
+      "response_length": 42637,
+      "error": null
+    },
+    "/admin/results": {
+      "url": "http://localhost:5000/admin/results",
+      "status_code": 200,
+      "expected_status": 200,
+      "success": true,
+      "response_length": 97343,
+      "error": null
+    }
+  },
+  "auth_pages": {
+    "/auth/login": {
+      "url": "http://localhost:5000/auth/login",
+      "status_code": 401,
+      "expected_status": 401,
+      "success": true,
+      "response_length": 37,
+      "error": null
+    },
+    "/auth/admin/login": {
+      "url": "http://localhost:5000/auth/admin/login",
+      "status_code": 401,
+      "expected_status": 401,
+      "success": true,
+      "response_length": 37,
+      "error": null
+    },
+    "/auth/logout": {
+      "url": "http://localhost:5000/auth/logout",
+      "status_code": 200,
+      "expected_status": 200,
+      "success": true,
+      "response_length": 46122,
+      "error": null
+    }
+  },
+  "election_pages": {
+    "/election/current": {
+      "url": "http://localhost:5000/election/current",
+      "status_code": 200,
+      "expected_status": 200,
+      "success": true,
+      "response_length": 46122,
+      "error": null
+    },
+    "/election/candidates": {
+      "url": "http://localhost:5000/election/candidates",
+      "status_code": 200,
+      "expected_status": 200,
+      "success": true,
+      "response_length": 46122,
+      "error": null
+    },
+    "/election/results": {
+      "url": "http://localhost:5000/election/results",
+      "status_code": 200,
+      "expected_status": 200,
+      "success": true,
+      "response_length": 46122,
+      "error": null
+    }
+  },
+  "api_endpoints": {
+    "/voter/api/election-status": {
+      "url": "http://localhost:5000/voter/api/election-status",
+      "status_code": 200,
+      "expected_status": 200,
+      "success": true,
+      "response_length": 46122,
+      "error": null
+    },
+    "/voter/api/candidates": {
+      "url": "http://localhost:5000/voter/api/candidates",
+      "status_code": 200,
+      "expected_status": 200,
+      "success": true,
+      "response_length": 46122,
+      "error": null
+    },
+    "/voter/cast-vote": {
+      "url": "http://localhost:5000/voter/cast-vote",
+      "status_code": 200,
+      "expected_status": 200,
+      "success": true,
+      "response_length": 46122,
+      "error": null
+    }
+  }
+}
